@@ -60,6 +60,9 @@ class Fragment
     text = text.replace /-{2,}/g, " "
     return text
 
+  setFeature: (name, value) ->
+    @features[name] = value.toString()
+
   featurize: (model) ->
     # ... w1. (sentence boundary?) w2 ...
     # Features, listed roughly in order of importance:
@@ -79,25 +82,20 @@ class Fragment
     c1 = w1.replace /^.+?-/, ""
     c2 = w2.replace /-.+?$/, ""
 
-    features = {}
-    addFeature = (name, value) ->
-      features[name] = value.toString()
-
-    addFeature "w1", c1
-    addFeature "w2", c2
-    addFeature "both", c1 + "_" + c2
+    @features = {}
+    @setFeature "w1", c1
+    @setFeature "w2", c2
+    @setFeature "both", c1 + "_" + c2
 
     if c1.replace(".","","g").match /^[A-Za-z]+$/
-      addFeature "w1length", Math.min(10, (c1.replace /\W/g, "").length)
-      addFeature "w1abbr",
+      @setFeature "w1length", Math.min(10, (c1.replace /\W/g, "").length)
+      @setFeature "w1abbr",
         parseInt Math.log(1 + model.non_abbrs.get(c1.slice 0,-1))
     if c2.replace(".","","g").match /^[A-Za-z]+$/
-      addFeature "w2cap", (c2[0].match /[A-Z]/)?
-      addFeature "w2lower",
+      @setFeature "w2cap", (c2[0].match /[A-Z]/)?
+      @setFeature "w2lower",
         parseInt Math.log(1 + model.lower_words.get c2.toLowerCase())
-      addFeature "w1w2upper", c1 + "_" + features["w2cap"]
-
-    return features
+      @setFeature "w1w2upper", c1 + "_" + @features["w2cap"]
 
   toString: ->
     return @text + (if @endsSentence then " <EOS> " else "")

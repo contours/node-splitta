@@ -42,22 +42,22 @@ describe "Fragment", ->
       model = new Model
       model.non_abbrs = new Counter { history: 66 }
       model.lower_words = new Counter { around: 222 }
-      features = frag.featurize model
+      frag.featurize model
       # (1) w1: word that includes a possible sentence boundary
-      features.w1.should.equal "history."
+      frag.features.w1.should.equal "history."
       # (2) w2: the next word, if it exists
-      features.w2.should.equal "Around"
+      frag.features.w2.should.equal "Around"
       # (3) w1length: number of alphabetic characters in w1
-      features.w1length.should.equal "7"
+      frag.features.w1length.should.equal "7"
       # (4) w2cap: true if w2 is capitalized
-      features.w2cap.should.equal "true"
+      frag.features.w2cap.should.equal "true"
       # (5) both: w1 and w2
-      features.both.should.equal "history._Around"
+      frag.features.both.should.equal "history._Around"
       # (6) w1abbr: log count in training of w1 without a final period
-      features.w1abbr.should.equal "4"
+      frag.features.w1abbr.should.equal "4"
       # (7) w2lower: log count in training of w2 as lowercased
-      features.w2lower.should.equal "5"
+      frag.features.w2lower.should.equal "5"
       # (8) w1w2upper: w1 and true if w2 is capitalized
-      features.w1w2upper.should.equal "history._true"
+      frag.features.w1w2upper.should.equal "history._true"
 
 
