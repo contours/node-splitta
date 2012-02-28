@@ -23,27 +23,28 @@ class Document
       @head = frag
     @tail = frag
 
+  getFragments: () ->
+    frag = @head
+    return (while frag?
+      yield = frag
+      frag = frag.next
+      yield)
+
   maybeSentenceBound: (word) ->
-    return true if ".?!".indexOf(word.substr -1) > 0
-    return true if word.match /.*[\.\?!][\"\')\]]*$/
+    return false if word.indexOf(".") < 0
+    return true if word.substr(-1) == "."
+    return true if word.match /.*\.[\"\u201D\'\u2019)\]]*$/
     return false
 
   getStatistics: ->
     null
 
   featurize: (model) ->
-    frag = @head
-    while frag
-      frag.featurize()
-      frag = frag.next
+    for frag in @getFragments()
+      frag.featurize model
 
   toString: ->
-    frag = @head
-    return (while frag
-      string = frag.toString()
-      frag = frag.next
-      string).join "/n"
-
+    return (frag.toString() for frag in @getFragments()).join "\n"
 
 class Fragment
 
@@ -92,10 +93,13 @@ class Fragment
       @setFeature "w1abbr",
         parseInt Math.log(1 + model.non_abbrs.get(c1.slice 0,-1))
     if c2.replace(".","","g").match /^[A-Za-z]+$/
-      @setFeature "w2cap", (c2[0].match /[A-Z]/)?
+      @setFeature "w2cap", if (c2[0].match /[A-Z]/)? then "True" else "False"
       @setFeature "w2lower",
         parseInt Math.log(1 + model.lower_words.get c2.toLowerCase())
       @setFeature "w1w2upper", c1 + "_" + @features["w2cap"]
+
+  getFeatures: () ->
+    return ("#{f}_#{v}" for f,v of @features)
 
   toString: ->
     return @text + (if @endsSentence then " <EOS> " else "")

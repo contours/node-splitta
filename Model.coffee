@@ -1,6 +1,8 @@
-zlib = require "zlib"
-fs = require "fs"
 async = require "async"
+fs = require "fs"
+path = require "path"
+temp = require "temp"
+zlib = require "zlib"
 Counter = require("./Counter").Counter
 
 class Model
@@ -32,15 +34,31 @@ class Model
     catch err
       callback err
 
+  formatFeatures: (doc) ->
+    lines = []
+    for frag in doc.getFragments()
+      features = (@features[f] for f in frag.getFeatures() when f of @features)
+      features.sort (x,y) -> x-y
+      lines.push("0 " + ("#{f}:1" for f in features).join " ")
+    return lines.join("\n") + "\n"
+
+  classify: (doc) ->
+    model_file = @path + "/svm_model"
+    if not path.existsSync(model_file)
+      throw new Error "#{model_file} does not exist"
+    if (f for own f of @features).length == 0
+      throw new Error "model has no features"
+
+    test_file = temp.openSync()
+    fs.writeSync test_file.fd, @formatFeatures doc
+    fs.closeSync test_file.fd
+
 #     def prep(self, doc):
 #         self.lower_words, self.non_abbrs = doc.get_stats(verbose=False)
 #         self.lower_words = dict(self.lower_words)
 #         self.non_abbrs = dict(self.non_abbrs)
 
 #     def train(self, doc):
-#         abstract
-
-#     def classify(self, doc, verbose=False):
 #         abstract
 
 #     def save(self):

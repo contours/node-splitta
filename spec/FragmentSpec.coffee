@@ -50,7 +50,7 @@ describe "Fragment", ->
       # (3) w1length: number of alphabetic characters in w1
       frag.features.w1length.should.equal "7"
       # (4) w2cap: true if w2 is capitalized
-      frag.features.w2cap.should.equal "true"
+      frag.features.w2cap.should.equal "True"
       # (5) both: w1 and w2
       frag.features.both.should.equal "history._Around"
       # (6) w1abbr: log count in training of w1 without a final period
@@ -58,6 +58,30 @@ describe "Fragment", ->
       # (7) w2lower: log count in training of w2 as lowercased
       frag.features.w2lower.should.equal "5"
       # (8) w1w2upper: w1 and true if w2 is capitalized
-      frag.features.w1w2upper.should.equal "history._true"
+      frag.features.w1w2upper.should.equal "history._True"
+
+  describe "#getFeatures()", ->
+
+    it "should return array of features", ->
+      frag = new Fragment [ "history." ]
+      frag.next = new Fragment [ "Around" ]
+      model = new Model
+      model.non_abbrs = new Counter { history: 66 }
+      model.lower_words = new Counter { around: 222 }
+      frag.featurize model
+      frag.getFeatures().sort().should.eql [
+        "both_history._Around",
+        "w1_history.",
+        "w1abbr_4",
+        "w1length_7",
+        "w1w2upper_history._True",
+        "w2_Around",
+        "w2cap_True",
+        "w2lower_5" ]
+
+    it "should return empty array if not yet featurized", ->
+      frag = new Fragment
+      frag.getFeatures().should.eql []
+
 
 
