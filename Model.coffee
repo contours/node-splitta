@@ -3,6 +3,7 @@ fs = require "fs"
 path = require "path"
 temp = require "temp"
 zlib = require "zlib"
+exec = require("child_process").exec
 Counter = require("./Counter").Counter
 
 class Model
@@ -29,8 +30,7 @@ class Model
   loadGzippedJSON: (path, callback) ->
     try
       zlib.gunzip fs.readFileSync(path), (err, buffer) ->
-        throw err if err?
-        callback null, JSON.parse buffer
+        callback err, JSON.parse buffer
     catch err
       callback err
 
@@ -42,16 +42,30 @@ class Model
       lines.push("0 " + ("#{f}:1" for f in features).join " ")
     return lines.join("\n") + "\n"
 
-  classify: (doc) ->
-    model_file = @path + "/svm_model"
-    if not path.existsSync(model_file)
-      throw new Error "#{model_file} does not exist"
+  logistic: (x, y=1) ->
+    return 1.0 / (1 + Math.pow Math.E, (-1 * y * x))
+
+  classify: (doc, callback) ->
+    model_file_path = @path + "/svm_model"
+    if not path.existsSync(model_file_path)
+      throw new Error "#{model_file_path} does not exist"
     if (f for own f of @features).length == 0
       throw new Error "model has no features"
 
     test_file = temp.openSync()
-    fs.writeSync test_file.fd, @formatFeatures doc
+    fs.writeSync test_file.fd, @formatFeatures(doc), null
     fs.closeSync test_file.fd
+
+    pred_file = temp.openSync()
+
+    cmd = "svm_classify #{test_file.path} #{model_file_path} #{pred_file.path}"
+    exec cmd, (err, stdout, stderr) =>
+      callback err if err?
+      lines =  (fs.readFileSync pred_file.path).toString().split("\n")
+      predictions = lines.map parseFloat
+      for frag, i in doc.getFragments()
+        frag.prediction = @logistic(predictions[i])
+      callback null
 
 #     def prep(self, doc):
 #         self.lower_words, self.non_abbrs = doc.get_stats(verbose=False)
