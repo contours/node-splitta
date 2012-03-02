@@ -1,4 +1,5 @@
 Document = require("./../Document").Document
+Model = require("./../Model").Model
 
 describe "Document", ->
 
@@ -39,6 +40,18 @@ describe "Document", ->
     it "should not ignore other chars at the end", ->
       doc = new Document
       (doc.maybeSentenceBound "foo.foo").should.be.false
+
+  describe "#segment()", (done) ->
+    m = new Model __dirname + "/../models/wsj+brown"
+    m.load (err) ->
+      done err if err?
+      d = new Document "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S. Millions attended the Inauguration."
+      d.featurize m
+      m.classify d, (err) ->
+        done err if err?
+        d.segment().should.eql [
+          "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S.",
+          "Millions attended the Inauguration." ]
 
   describe "#toString()", ->
 

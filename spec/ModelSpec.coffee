@@ -71,7 +71,8 @@ describe "Model", ->
 
     it "should set prediction on fragments", (done) ->
       m = new Model __dirname + "/../models/wsj+brown"
-      m.load ->
+      m.load (err) ->
+        done err if err?
         d = new Document "This is fun. Don't you think?"
         d.featurize m
         m.classify d, (err) ->

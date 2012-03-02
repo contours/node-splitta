@@ -43,6 +43,16 @@ class Document
     for frag in @getFragments()
       frag.featurize model
 
+  segment: () ->
+    sentences = []
+    sentence = []
+    for frag in @getFragments()
+      sentence.push frag.text
+      if frag.endsSentence or frag.prediction > 0.5
+        sentences.push(sentence.join " ")
+        sentence = []
+    return sentences
+
   toString: ->
     return (frag.toString() for frag in @getFragments()).join "\n"
 
