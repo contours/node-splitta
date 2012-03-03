@@ -1,5 +1,5 @@
-Model = require("./../Model").Model
-Document = require("./../Document").Document
+{Model} = require "../src/Model"
+{Document} = require "../src/Document"
 should = require "should"
 
 describe "Model", ->

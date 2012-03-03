@@ -3,8 +3,8 @@ fs = require "fs"
 path = require "path"
 temp = require "temp"
 zlib = require "zlib"
-exec = require("child_process").exec
-Counter = require("./Counter").Counter
+{exec} = require "child_process"
+{Counter} = require "./Counter"
 
 class Model
 

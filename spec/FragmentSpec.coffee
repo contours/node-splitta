@@ -1,7 +1,7 @@
-Fragment = require("./../Document").Fragment
-Model = require("./../Model").Model
-Counter = require("./../Counter").Counter
-tokenize = require("./../RegexWordTokenizer").tokenize
+{Fragment} = require "../src/Document"
+{Model} = require "../src/Model"
+{Counter} = require "../src/Counter"
+{tokenize} = require "../src/RegexWordTokenizer"
 
 describe "Fragment", ->
 

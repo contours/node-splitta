@@ -1,5 +1,6 @@
-Document = require("./../Document").Document
-Model = require("./../Model").Model
+{Document} = require "../src/Document"
+{Model} = require "../src/Model"
+should = require "should"
 
 describe "Document", ->
 
@@ -41,17 +42,26 @@ describe "Document", ->
       doc = new Document
       (doc.maybeSentenceBound "foo.foo").should.be.false
 
-  describe "#segment()", (done) ->
-    m = new Model __dirname + "/../models/wsj+brown"
-    m.load (err) ->
-      done err if err?
-      d = new Document "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S. Millions attended the Inauguration."
-      d.featurize m
-      m.classify d, (err) ->
+  describe "#segment()", ->
+
+    it "should properly segment text into sentences", (done) ->
+      m = new Model __dirname + "/../models/wsj+brown"
+      m.load (err) ->
         done err if err?
-        d.segment().should.eql [
-          "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S.",
-          "Millions attended the Inauguration." ]
+        d = new Document "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S. Millions attended the Inauguration."
+        d.featurize m
+        m.classify d, (err) ->
+          done err if err?
+          d.segment().should.eql [
+            "On Jan. 20, former Sen. Barack Obama became the 44th President of the U.S.",
+            "Millions attended the Inauguration." ]
+          done()
+
+    it "should throw error if document has not been featurized", ->
+      should.fail "implement me!"
+
+    it "should throw error if document has not been classified", ->
+      should.fail "implement me!"
 
   describe "#toString()", ->
 

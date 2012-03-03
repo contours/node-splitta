@@ -1,9 +1,10 @@
-tokenize = require("./RegexWordTokenizer").tokenize
+{tokenize} = require "./RegexWordTokenizer"
 
 class Document
 
   constructor: (text) ->
     return if not text?
+    text = text.trim()
     @head = null
     @tail = null
     words = []

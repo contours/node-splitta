@@ -1,4 +1,4 @@
-Counter = require("./../Counter").Counter
+{Counter} = require("../src/Counter")
 
 describe "Counter", ->
 

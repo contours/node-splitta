@@ -1,4 +1,4 @@
-tokenize = require("./../RegexWordTokenizer").tokenize
+{tokenize} = require "../src/RegexWordTokenizer"
 
 describe "RegexWordTokenizer", ->
 
