@@ -48,6 +48,8 @@ class Document
     sentences = []
     sentence = []
     for frag in @getFragments()
+      throw new Error "document has not been featurized" if not frag.features
+      throw new Error "document has not been classified" if not frag.prediction
       sentence.push frag.text
       if frag.endsSentence or frag.prediction > 0.5
         sentences.push(sentence.join " ")

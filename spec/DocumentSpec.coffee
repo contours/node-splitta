@@ -58,10 +58,18 @@ describe "Document", ->
           done()
 
     it "should throw error if document has not been featurized", ->
-      should.fail "implement me!"
+      d = new Document "yo"
+      (->
+        d.segment()).should.throw "document has not been featurized"
 
     it "should throw error if document has not been classified", ->
-      should.fail "implement me!"
+      m = new Model __dirname + "/../models/wsj+brown"
+      m.load (err) ->
+        done err if err?
+        d = new Document "yo"
+        d.featurize m
+        (->
+          d.segment()).should.throw "document has not been classified"
 
   describe "#toString()", ->
 
