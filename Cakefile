@@ -1,5 +1,7 @@
 fs = require "fs"
 {exec} = require "child_process"
+mocha = new (require "mocha")
+require "should"
 
 run = (cmd) ->
   exec cmd, (err, stdout, stderr) ->
@@ -25,4 +27,10 @@ task "compile", "Compile CoffeeScript files", (options) ->
   compileDir "src", "lib"
 
 task "test", "Run tests", ->
-  run "mocha spec/*.coffee --require should"
+  fs.readdir "spec", (err, files) ->
+    return console.log err if err?
+    files.forEach (f) ->
+      mocha.addFile("spec/#{f}") if f.split('.').slice(-1)[0] == 'coffee'
+    mocha.run ->
+      console.log "Done."
+
