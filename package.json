@@ -5,7 +5,7 @@
   "description": "Node.js port of Dan Gillick's sentence boundary detector",
   "bin": {
     "splitta": "./bin/splitta"
-  }
+  },
   "scripts": {
     "install": "cake compile",
     "test": "cake test"
@@ -19,7 +19,7 @@
   "dependencies": {
      "coffee-script": "1.2.x",
      "async": "0.1.x"
-  } 
+  },
   "devDependencies": {
      "mocha": "0.14.x",
      "should": "0.6.x"          
