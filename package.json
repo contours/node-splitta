@@ -1,0 +1,29 @@
+{
+  "name": "splitta",
+  "version": "0.0.0",
+  "author": "Ryan Shaw <ryanshaw@unc.edu> (http://aeshin.org/)",
+  "description": "Node.js port of Dan Gillick's sentence boundary detector",
+  "bin": {
+    "splitta": "./bin/splitta"
+  }
+  "scripts": {
+    "install": "cake compile",
+    "test": "cake test"
+  },
+  "main": "./lib/splitta",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rybesh/node-splitta.git"
+  },
+  "keywords": [ "nlp", "sentence", "tokenizer", "svm" ],
+  "dependencies": {
+     "coffee-script": "1.2.x",
+     "async": "0.1.x"
+  } 
+  "devDependencies": {
+     "mocha": "0.14.x",
+     "should": "0.6.x"          
+  },
+  "license": "MIT",
+  "engine": { "node": ">=0.6" }
+}
