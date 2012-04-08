@@ -79,3 +79,18 @@ describe "Model", ->
           done err if err?
           (f.prediction for f in d.getFragments()).should.eql [ 0.8249208666161433, 0.6632801631840616 ]
           done()
+
+  describe "#segment()", ->
+
+    it "should throw err if model file does not exist", ->
+      m = new Model __dirname
+      (() -> m.segment "a doe, a deer.").should.throw /^.*\/svm_model does not exist$/
+
+    it "should properly segment text into sentences", (done) ->
+      m = new Model __dirname + "/../models/wsj+brown"
+      m.load (err) ->
+        done err if err?
+        m.segment "This is fun. Don't you think?", (err, segments) ->
+          done err if err?
+          segments.should.eql ["This is fun.", "Don't you think?"]
+          done()

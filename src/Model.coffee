@@ -5,6 +5,7 @@ temp = require "temp"
 zlib = require "zlib"
 {exec} = require "child_process"
 {Counter} = require "./Counter"
+{Document} = require "./Document"
 
 class Model
 
@@ -66,6 +67,12 @@ class Model
       for frag, i in doc.getFragments()
         frag.prediction = @logistic(predictions[i])
       callback null
+
+  segment: (text, callback) ->
+      doc = new Document text
+      doc.featurize this
+      @classify doc, (err) ->
+        callback err, doc.segment()
 
 #     def prep(self, doc):
 #         self.lower_words, self.non_abbrs = doc.get_stats(verbose=False)
