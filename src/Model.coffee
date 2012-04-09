@@ -10,9 +10,13 @@ zlib = require "zlib"
 class Model
 
   constructor: (@path) ->
+    @model_file_path = null
     @features = {}
     @lower_words = new Counter
     @non_abbrs = new Counter
+    @q = async.queue ((task, callback) =>
+      cmd = "svm_classify #{task.test} #{task.modl} #{task.pred}"
+      exec cmd, (err, stdout, stderr) => callback err), 10 # workers
 
   load: (callback) ->
     async.parallel {
@@ -47,9 +51,13 @@ class Model
     return 1.0 / (1 + Math.pow Math.E, (-1 * y * x))
 
   classify: (doc, callback) ->
-    model_file_path = @path + "/svm_model"
-    if not path.existsSync(model_file_path)
-      throw new Error "#{model_file_path} does not exist"
+
+    unless @model_file_path
+      model_file_path = @path + "/svm_model"
+      if not path.existsSync(model_file_path)
+        throw new Error "#{model_file_path} does not exist"
+      @model_file_path = model_file_path
+
     if (f for own f of @features).length == 0
       throw new Error "model has no features"
 
@@ -59,14 +67,17 @@ class Model
 
     pred_file = temp.openSync()
 
-    cmd = "svm_classify #{test_file.path} #{model_file_path} #{pred_file.path}"
-    exec cmd, (err, stdout, stderr) =>
-      callback err if err?
-      lines =  (fs.readFileSync pred_file.path).toString().split("\n")
-      predictions = lines.map parseFloat
-      for frag, i in doc.getFragments()
-        frag.prediction = @logistic(predictions[i])
-      callback null
+    @q.push {
+      test: test_file.path,
+      modl: @model_file_path,
+      pred: pred_file.path }, (err) =>
+        return callback err if err?
+        lines =  (fs.readFileSync pred_file.path).toString().split("\n")
+        fs.closeSync pred_file.fd
+        predictions = lines.map parseFloat
+        for frag, i in doc.getFragments()
+          frag.prediction = @logistic(predictions[i])
+        callback null
 
   segment: (text, callback) ->
       doc = new Document text
