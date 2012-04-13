@@ -1,6 +1,7 @@
 {Model} = require "../src/Model"
 {Document} = require "../src/Document"
 should = require "should"
+async = require "async"
 
 describe "Model", ->
 
@@ -78,7 +79,7 @@ describe "Model", ->
       m.load (err) ->
         return done err if err?
         m.segment "This is fun. Don't you think?", (err, segments) ->
-          done err if err?
+          return done err if err?
           segments.should.eql ["This is fun.", "Don't you think?"]
           done()
 
@@ -90,4 +91,23 @@ describe "Model", ->
           return done err if err?
           segments.length.should.equal 110
           done()
+
+    it "should properly segment parallel texts", (done) ->
+      m = new Model __dirname + "/../models/wsj+brown"
+      m.load (err) ->
+        return done err if err?
+        async.parallel {
+          a: (callback) ->
+            m.segment "This is fun. Don't you think?", callback
+          b: (callback) ->
+            m.segment "Sure it is. A lot of fun.", callback
+          c: (callback) ->
+            m.segment "Ok, I've had enough. Let's go home now.", callback
+        }, (err, o) =>
+          return done err if err?
+          o.a.should.eql ["This is fun.", "Don't you think?"]
+          o.b.should.eql ["Sure it is.", "A lot of fun."]
+          o.c.should.eql ["Ok, I've had enough.", "Let's go home now."]
+          done()
+
 

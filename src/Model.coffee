@@ -101,7 +101,6 @@ class Model
         classifier.stdin.write(
           "0 " + ("#{f}:1" for f in feats).join(" ") + "\n")
       classifier.stdin.write "\n"
-      classifier.stdin.end()
 
   segment: (text, callback) ->
       doc = new Document text
