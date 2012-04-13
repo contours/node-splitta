@@ -37,10 +37,13 @@ class Model
       @pool = Pool {
         name: 'svmclassify'
         create: (callback) ->
-          callback null, spawn "svm_classifyd", [model_file_path]
+          classifier = spawn "svm_classifyd", [model_file_path]
+          classifier.carrier = carry classifier.stdout
+          callback null, classifier
         destroy: (child) ->
           child.kill "SIGINT"
         max: 10
+        idleTimeoutMillis: 5000
       }
       callback()
 
@@ -83,14 +86,19 @@ class Model
 
       # parse classifier output
       index = 0
-      carry classifier.stdout, (line) =>
+      classifier.carrier.on "line", (line) =>
         value = parseFloat line
         if isNaN value
           @close -> callback new Error "unexpected output: #{line}"
           return
         if index == fragments.length
-          @pool.release classifier
-          callback null
+          if classifier?
+            classifier.carrier.removeAllListeners()
+            classifier.stderr.removeAllListeners()
+            classifier.removeAllListeners()
+            @pool.release classifier
+            classifier = null
+            callback null
         else
           fragments[index++].prediction = @logistic value
 
