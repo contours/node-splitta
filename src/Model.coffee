@@ -1,24 +1,25 @@
 async = require "async"
 fs = require "fs"
 path = require "path"
-temp = require "temp"
 zlib = require "zlib"
-{exec} = require "child_process"
+{carry} = require "carrier"
+{spawn} = require "child_process"
+{Pool} = require "generic-pool"
 {Counter} = require "./Counter"
 {Document} = require "./Document"
 
 class Model
 
   constructor: (@path) ->
-    @model_file_path = null
     @features = {}
     @lower_words = new Counter
     @non_abbrs = new Counter
-    @q = async.queue ((task, callback) =>
-      cmd = "svm_classify #{task.test} #{task.modl} #{task.pred}"
-      exec cmd, (err, stdout, stderr) => callback err), 10 # workers
+    @pool = null
 
   load: (callback) ->
+    model_file_path = @path + "/svm_model"
+    unless path.existsSync model_file_path
+      return callback new Error "#{model_file_path} does not exist"
     async.parallel {
       features: (callback) =>
         @loadGzippedJSON (@path + "/features.json.gz"), callback
@@ -27,63 +28,87 @@ class Model
       non_abbrs: (callback) =>
         @loadGzippedJSON (@path + "/non_abbrs.json.gz"), callback
     }, (err, o) =>
+      return callback err if err?
+      if (f for own f of o.features).length == 0
+        return callback new Error "model has no features"
       @features = o.features
       @lower_words = new Counter o.lower_words
       @non_abbrs = new Counter o.non_abbrs
-      callback err
+      @pool = Pool {
+        name: 'svmclassify'
+        create: (callback) ->
+          callback null, spawn "svm_classifyd", [model_file_path]
+        destroy: (child) ->
+          child.kill "SIGINT"
+        max: 10
+      }
+      callback()
+
+  close: (callback) ->
+    return callback() unless @pool?
+    @pool.drain => @pool.destroyAllNow -> callback()
 
   loadGzippedJSON: (path, callback) ->
     try
       zlib.gunzip fs.readFileSync(path), (err, buffer) ->
-        callback err, JSON.parse buffer
+        return callback err if err?
+        callback null, JSON.parse buffer
     catch err
       callback err
-
-  formatFeatures: (doc) ->
-    lines = []
-    for frag in doc.getFragments()
-      features = (@features[f] for f in frag.getFeatures() when f of @features)
-      features.sort (x,y) -> x-y
-      lines.push("0 " + ("#{f}:1" for f in features).join " ")
-    return lines.join("\n") + "\n"
 
   logistic: (x, y=1) ->
     return 1.0 / (1 + Math.pow Math.E, (-1 * y * x))
 
   classify: (doc, callback) ->
+    return callback new Error "model has not been loaded" unless @pool?
+    @pool.acquire (err, classifier) =>
+      if err?
+        @close -> callback err
+        return
 
-    unless @model_file_path
-      model_file_path = @path + "/svm_model"
-      if not path.existsSync(model_file_path)
-        throw new Error "#{model_file_path} does not exist"
-      @model_file_path = model_file_path
+      fragments = doc.getFragments()
 
-    if (f for own f of @features).length == 0
-      throw new Error "model has no features"
+      # callback with an err if classifier prints to stderr
+      classifier.stderr.on "data", (data) ->
+         @close -> callback new Error data.toString()
 
-    test_file = temp.openSync()
-    fs.writeSync test_file.fd, @formatFeatures(doc), null
-    fs.closeSync test_file.fd
+      # callback with an err if the classifier dies or is killed abnormally
+      classifier.on "exit", (code, signal) ->
+        unless signal == "SIGINT"
+          @close ->
+            if code?
+              callback new Error "classifer exited with code #{code})"
+            else if signal?
+              callback new Error "classifer killed with #{signal}"
 
-    pred_file = temp.openSync()
+      # parse classifier output
+      index = 0
+      carry classifier.stdout, (line) =>
+        value = parseFloat line
+        if isNaN value
+          @close -> callback new Error "unexpected output: #{line}"
+          return
+        if index == fragments.length
+          @pool.release classifier
+          callback null
+        else
+          fragments[index++].prediction = @logistic value
 
-    @q.push {
-      test: test_file.path,
-      modl: @model_file_path,
-      pred: pred_file.path }, (err) =>
-        return callback err if err?
-        lines =  (fs.readFileSync pred_file.path).toString().split("\n")
-        fs.closeSync pred_file.fd
-        predictions = lines.map parseFloat
-        for frag, i in doc.getFragments()
-          frag.prediction = @logistic(predictions[i])
-        callback null
+      # format fragment features and send to classifier
+      for frag in fragments
+        feats = (@features[f] for f in frag.getFeatures() when f of @features)
+        feats.sort (x,y) -> x-y
+        classifier.stdin.write(
+          "0 " + ("#{f}:1" for f in feats).join(" ") + "\n")
+      classifier.stdin.write "\n"
+      classifier.stdin.end()
 
   segment: (text, callback) ->
       doc = new Document text
       doc.featurize this
       @classify doc, (err) ->
-        callback err, doc.segment()
+        return callback err if err?
+        callback null, doc.segment()
 
 #     def prep(self, doc):
 #         self.lower_words, self.non_abbrs = doc.get_stats(verbose=False)

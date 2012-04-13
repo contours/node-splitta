@@ -4,8 +4,11 @@
 exports.segment = (text, callback) ->
   m = new Model __dirname + "/../models/wsj+brown"
   m.load (err) ->
-    callback err if err?
-    m.segment text, callback
+    return callback err if err?
+    m.segment text, (err, sentences) ->
+      return callback err if err?
+      m.close ->
+        callback null, sentences
 
 exports.loadModel = (callback) ->
   m = new Model __dirname + "/../models/wsj+brown"

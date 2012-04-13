@@ -27,9 +27,9 @@ class Document
   getFragments: () ->
     frag = @head
     return (while frag?
-      yield = frag
+      toyield = frag
       frag = frag.next
-      yield)
+      toyield)
 
   maybeSentenceBound: (word) ->
     return false if word.indexOf(".") < 0

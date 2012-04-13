@@ -4,6 +4,11 @@ should = require "should"
 
 describe "Document", ->
 
+  m = null
+  afterEach (done) ->
+    return done() unless m?
+    m.close done
+
   it "should break text into a list of fragments", ->
     doc = new Document "this is fun. don't you think?"
     doc.head.toString().should.equal "this is fun."

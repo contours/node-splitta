@@ -3,6 +3,7 @@ splitta = require "./splitta"
 run = ->
 
   fail = (err) ->
+    console.log "fuck"
     console.error err
     process.exit 1
 
@@ -15,7 +16,7 @@ run = ->
 
   process.stdin.on "end", ->
     splitta.segment text, (err, sentences) ->
-      fail err if err?
+      return fail err if err?
       console.log sentence for sentence in sentences
       process.exit 0
 
