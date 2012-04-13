@@ -42,7 +42,7 @@ class Model
           callback null, classifier
         destroy: (child) ->
           child.kill "SIGINT"
-        max: 10
+        max: 5
         idleTimeoutMillis: 5000
       }
       callback()
