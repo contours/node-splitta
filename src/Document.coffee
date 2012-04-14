@@ -104,11 +104,11 @@ class Fragment
     if c1.replace(".","","g").match /^[A-Za-z]+$/
       @setFeature "w1length", Math.min(10, (c1.replace /\W/g, "").length)
       @setFeature "w1abbr",
-        parseInt Math.log(1 + model.non_abbrs.get(c1.slice 0,-1))
+        parseInt Math.log(1 + model.non_abbrs.get(c1.slice 0,-1)), 10
     if c2.replace(".","","g").match /^[A-Za-z]+$/
       @setFeature "w2cap", if (c2[0].match /[A-Z]/)? then "True" else "False"
       @setFeature "w2lower",
-        parseInt Math.log(1 + model.lower_words.get c2.toLowerCase())
+        parseInt Math.log(1 + model.lower_words.get c2.toLowerCase()), 10
       @setFeature "w1w2upper", c1 + "_" + @features["w2cap"]
 
   getFeatures: () ->
