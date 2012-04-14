@@ -1,37 +1,43 @@
 fs = require "fs"
-{exec} = require "child_process"
 Mocha = require "mocha"
+CoffeeScript = require "coffee-script"
 require "should"
+{spawn} = require "child_process"
 
-run = (cmd) ->
-  exec cmd, (err, stdout, stderr) ->
-    return console.error err if err?
-    console.log stdout if stdout.length > 0
-    console.error stderr if stderr.length > 0
+printLine = (line) -> process.stdout.write line + '\n'
 
-compileFile = (src, dst) ->
-  run "coffee -o #{dst} -c #{src}"
+run = (cmd, args) ->
+  proc = spawn cmd, args
+  proc.stderr.on "data", (buffer) -> console.log buffer.toString()
+  proc.on "exit", (status) ->
+    process.exit(1) if status != 0
 
-compileDir = (src, dst) ->
-  fs.readdir "#{src}", (err, files) ->
-    return console.log err if err?
-    files.forEach (f) ->
-      fs.stat "#{src}/#{f}", (err, stats) ->
-        return console.log err if err?
-        if stats.isFile() and f.match /\.coffee$/
-          compileFile "#{src}/#{f}", "#{dst}"
-        else if stats.isDirectory()
-          compileDir "#{src}/#{f}", "#{dst}/#{f}"
+lint = (file) ->
+  fs.readFile file, (err, data) ->
+    return console.err err if err?
+    cs = data.toString()
+    js = CoffeeScript.compile cs
+    printIt = (buffer) -> printLine file + ':\t' + buffer.toString().trim()
+    conf = __dirname + '/jsl.conf'
+    jsl = spawn 'jsl', ['-nologo', '-stdin', '-conf', conf]
+    jsl.stdout.on 'data', printIt
+    jsl.stderr.on 'data', printIt
+    jsl.stdin.write js
+    jsl.stdin.end()
 
-task "compile", "Compile CoffeeScript files", (options) ->
-  compileDir "src", "lib"
+sourcefiles = ->
+  files = fs.readdirSync "src"
+  return ("src/" + file for file in files when file.match /\.coffee$/ )
+
+task "lint", "Lint CoffeeScript files", ->
+  lint file for file in sourcefiles()
+
+task "build", "Compile CoffeeScript files", ->
+  run "coffee", ["-c", "-o", "lib"].concat sourcefiles()
 
 task "test", "Run tests", ->
-  fs.readdir "spec", (err, files) ->
-    return console.log err if err?
-    mocha = new Mocha()
-    files.forEach (f) ->
-      mocha.addFile("spec/#{f}") if f.split('.').slice(-1)[0] == 'coffee'
-    mocha.run ->
-      console.log "Done."
+  mocha = new Mocha()
+  files = fs.readdirSync "spec"
+  mocha.addFile "spec/#{file}" for file in files when file.match /\.coffee$/
+  mocha.run -> console.log "Done."
 
