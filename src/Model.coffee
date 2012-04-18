@@ -15,6 +15,8 @@ class Model
     @lower_words = new Counter
     @non_abbrs = new Counter
     @pool = null
+    @cleanup = (err) => @close -> throw err
+    process.on "uncaughtException", @cleanup
 
   load: (callback) ->
     model_file_path = @path + "/svm_model"
@@ -48,6 +50,7 @@ class Model
       callback()
 
   close: (callback) ->
+    process.removeListener "uncaughtException", @cleanup
     return callback() unless @pool?
     @pool.drain => @pool.destroyAllNow -> callback()
 
