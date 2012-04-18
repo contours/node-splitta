@@ -67,52 +67,54 @@ class Model
 
   classify: (doc, callback) ->
     return callback new Error "model has not been loaded" unless @pool?
-    @pool.acquire (err, classifier) =>
-      if err?
-        @close -> callback err
-        return
-
-      fragments = doc.getFragments()
-
-      # callback with an err if classifier prints to stderr
-      classifier.stderr.on "data", (data) ->
-         @close -> callback new Error data.toString()
-
-      # callback with an err if the classifier dies or is killed abnormally
-      classifier.on "exit", (code, signal) ->
-        unless signal == "SIGINT"
-          @close ->
-            if code?
-              callback new Error "classifer exited with code #{code})"
-            else if signal?
-              callback new Error "classifer killed with #{signal}"
-
-      # parse classifier output
-      index = 0
-      classifier.carrier.on "line", (line) =>
-        value = parseFloat line
-        if isNaN value
-          @close -> callback new Error "unexpected output: #{line}"
+    try
+      @pool.acquire (err, classifier) =>
+        if err?
+          @close -> callback err
           return
-        if index == fragments.length
-          if classifier?
-            classifier.carrier.removeAllListeners()
-            classifier.stderr.removeAllListeners()
-            classifier.removeAllListeners()
-            @pool.release classifier
-            classifier = null
-            callback null
-        else
-          fragments[index++].prediction = @logistic value
 
-      # format fragment features and send to classifier
-      for frag in fragments
-        feats = (@features[f] for f in frag.getFeatures() when f of @features)
-        feats.sort (x,y) -> x-y
-        classifier.stdin.write(
-          "0 " + ("#{f}:1" for f in feats).join(" ") + "\n")
-      classifier.stdin.write "\n"
+        fragments = doc.getFragments()
 
+        # callback with an err if classifier prints to stderr
+        classifier.stderr.on "data", (data) ->
+           @close -> callback new Error data.toString()
+
+        # callback with an err if the classifier dies or is killed abnormally
+        classifier.on "exit", (code, signal) ->
+          unless signal == "SIGINT"
+            @close ->
+              if code?
+                callback new Error "classifer exited with code #{code})"
+              else if signal?
+                callback new Error "classifer killed with #{signal}"
+
+        # parse classifier output
+        index = 0
+        classifier.carrier.on "line", (line) =>
+          value = parseFloat line
+          if isNaN value
+            @close -> callback new Error "unexpected output: #{line}"
+            return
+          if index == fragments.length
+            if classifier?
+              classifier.carrier.removeAllListeners()
+              classifier.stderr.removeAllListeners()
+              classifier.removeAllListeners()
+              @pool.release classifier
+              classifier = null
+              callback null
+          else
+            fragments[index++].prediction = @logistic value
+
+        # format fragment features and send to classifier
+        for frag in fragments
+          feats = (@features[f] for f in frag.getFeatures() when f of @features)
+          feats.sort (x,y) -> x-y
+          classifier.stdin.write(
+            "0 " + ("#{f}:1" for f in feats).join(" ") + "\n")
+        classifier.stdin.write "\n"
+    catch err
+      callback err
   segment: (text, callback) ->
       doc = new Document text
       doc.featurize this
