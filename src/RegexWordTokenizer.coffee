@@ -59,6 +59,6 @@ patterns = [
 
 tokenize = (text) ->
   patterns.reduce ((text, [regex, replacement]) ->
-     text.replace regex, replacement), text
+    text.replace regex, replacement), text
 
 exports.tokenize = tokenize

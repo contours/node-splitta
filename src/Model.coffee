@@ -77,7 +77,7 @@ class Model
 
         # callback with an err if classifier prints to stderr
         classifier.stderr.on "data", (data) ->
-           @close -> callback new Error data.toString()
+          @close -> callback new Error data.toString()
 
         # callback with an err if the classifier dies or is killed abnormally
         classifier.on "exit", (code, signal) ->
@@ -116,11 +116,11 @@ class Model
     catch err
       callback err
   segment: (text, callback) ->
-      doc = new Document text
-      doc.featurize this
-      @classify doc, (err) ->
-        return callback err if err?
-        callback null, doc.segment()
+    doc = new Document text
+    doc.featurize this
+    @classify doc, (err) ->
+      return callback err if err?
+      callback null, doc.segment()
 
 #     def prep(self, doc):
 #         self.lower_words, self.non_abbrs = doc.get_stats(verbose=False)
