@@ -14,7 +14,7 @@ run = (cmd, args) ->
 
 lint = (file) ->
   fs.readFile file, (err, data) ->
-    return console.err err if err?
+    return console.error err if err?
     cs = data.toString()
     js = CoffeeScript.compile cs
     printIt = (buffer) -> printLine file + ':\t' + buffer.toString().trim()
