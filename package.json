@@ -7,7 +7,7 @@
     "splitta": "./bin/splitta"
   },
   "scripts": {
-    "install": "cake compile",
+    "install": "cake build",
     "test": "cake test"
   },
   "main": "./lib/splitta",
