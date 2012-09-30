@@ -18,7 +18,9 @@
   "keywords": [ "nlp", "sentence", "tokenizer", "svm" ],
   "dependencies": {
      "coffee-script": "1.2.x",
-     "async": "0.1.x"
+     "async": "0.1.x",
+     "carrier": "0.1.x",
+     "generic-pool": "2.0.x"
   },
   "devDependencies": {
      "mocha": "1.0.x",
