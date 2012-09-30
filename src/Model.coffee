@@ -1,6 +1,5 @@
 async = require "async"
 fs = require "fs"
-path = require "path"
 zlib = require "zlib"
 {carry} = require "carrier"
 {spawn} = require "child_process"
@@ -20,7 +19,7 @@ class Model
 
   load: (callback) ->
     model_file_path = @path + "/svm_model"
-    unless path.existsSync model_file_path
+    unless fs.existsSync model_file_path
       return callback new Error "#{model_file_path} does not exist"
     async.parallel {
       features: (callback) =>
