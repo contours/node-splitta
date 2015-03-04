@@ -6,7 +6,7 @@ A Node.js port of [`splitta`](http://code.google.com/p/splitta/), Dan Gillick's 
 To install the patched `svmlight` using [Homebrew](http://mxcl.github.com/homebrew/): 
 
     $ brew tap rybesh/homebrew-alt
-    $ brew install svmlight
+    $ brew install svm_light
 
 To install `node-splitta`:
 
